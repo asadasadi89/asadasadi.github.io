@@ -1,0 +1,68 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Professional Portfolio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #0077b5;
+        }
+        .section {
+            padding: 80px 0;
+        }
+        .linkedin-blue {
+            background-color: #0077b5;
+            border-color: #0077b5;
+        }
+        .linkedin-blue:hover {
+            background-color: #00669c;
+            border-color: #00669c;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Your Portfolio</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="#about">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="section bg-light text-center">
+        <div class="container">
+            <img id="profile-picture" src="https://via.placeholder.com/150/0077b5/ffffff?text=Photo" alt="Profile" class="profile-img mb-3">
+            <h1 id="profile-name">Your Name</h1>
+            <p id="profile-headline" class="lead">Professional Headline</p>
+            <p id="profile-location" class="text-muted mb-3">Location</p>
+            <button onclick="signInWithLinkedIn()" class="btn linkedin-blue">
+                <i class="bi bi-linkedin"></i> Import from LinkedIn
+            </button>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="text-center mb-5">About Me</h2>
+            <p id="profile-summary" class="lead text-center">
+                Connect with LinkedIn to display your professional summary here.
+            </p>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+```
