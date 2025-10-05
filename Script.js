@@ -1,146 +1,117 @@
-// LinkedIn Integration Script
-console.log('LinkedIn script loaded');
+// LinkedIn Integration - DEBUG VERSION
+console.log('=== LINKEDIN DEBUG === Script loaded');
 
 let linkedInReady = false;
+let initializationAttempted = false;
 
-// Initialize LinkedIn SDK
 function initLinkedIn() {
-    console.log('Initializing LinkedIn SDK...');
+    if (initializationAttempted) {
+        console.log('=== LINKEDIN DEBUG === Init already attempted, skipping');
+        return;
+    }
     
-    // Check if already loaded
-    if (document.querySelector('script[src*="linkedin.com/in.js"]')) {
-        console.log('LinkedIn SDK already loaded');
+    initializationAttempted = true;
+    console.log('=== LINKEDIN DEBUG === Starting initialization');
+    
+    // Check if SDK already exists
+    if (window.IN) {
+        console.log('=== LINKEDIN DEBUG === IN object already exists');
+        linkedInReady = true;
+        enableButton();
         return;
     }
     
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = 'https://platform.linkedin.com/in.js';
-    // ⬇️⬇️⬇️ REPLACE WITH YOUR ACTUAL CLIENT ID ⬇️⬇️⬇️
+    
+    // 🎯 REPLACE THIS WITH YOUR ACTUAL CLIENT ID
     script.text = 'api_key: 789fpgwdxweuiv\n authorize: true\n scope: r_liteprofile';
-    // ⬆️⬆️⬆️ REPLACE WITH YOUR ACTUAL CLIENT ID ⬆️⬆️⬆️
+    // 🎯 Make sure to replace YOUR_ACTUAL_CLIENT_ID_HERE
     
     script.onload = function() {
-        console.log('LinkedIn SDK loaded successfully');
+        console.log('=== LINKEDIN DEBUG === Script.onload triggered');
+        console.log('=== LINKEDIN DEBUG === IN object:', typeof window.IN);
+        console.log('=== LINKEDIN DEBUG === IN.User:', typeof window.IN?.User);
+        
         linkedInReady = true;
         enableButton();
-        
-        // Check if user is already authorized
-        if (typeof IN !== 'undefined') {
-            checkAuthStatus();
-        }
+        checkAuthStatus();
     };
     
-    script.onerror = function() {
-        console.error('Failed to load LinkedIn SDK');
-        linkedInReady = false;
-        showMessage('Failed to load LinkedIn services', 'error');
+    script.onerror = function(err) {
+        console.error('=== LINKEDIN DEBUG === Script.onerror triggered:', err);
+        console.log('=== LINKEDIN DEBUG === Script src:', script.src);
+        showDebugMessage('Failed to load LinkedIn SDK. Check Client ID and console.', 'error');
     };
     
+    console.log('=== LINKEDIN DEBUG === Adding script to head');
     document.head.appendChild(script);
 }
 
-// Enable the button when ready
 function enableButton() {
     const button = document.getElementById('linkedin-button');
     if (button) {
         button.disabled = false;
         button.textContent = 'Import from LinkedIn';
-        console.log('LinkedIn button enabled and clickable');
+        console.log('=== LINKEDIN DEBUG === Button enabled and clickable');
+    } else {
+        console.error('=== LINKEDIN DEBUG === Button element not found!');
     }
 }
 
-// Check if user is already authorized
-function checkAuthStatus() {
-    if (typeof IN !== 'undefined' && IN.User && IN.User.isAuthorized()) {
-        console.log('User already authorized, fetching data...');
-        fetchProfileData();
-    }
-}
-
-// Main function to handle LinkedIn import
 function importFromLinkedIn() {
-    console.log('Import button clicked');
-    console.log('LinkedIn ready:', linkedInReady);
-    console.log('IN object:', typeof IN);
+    console.log('=== LINKEDIN DEBUG === Button clicked!');
+    console.log('=== LINKEDIN DEBUG === linkedInReady:', linkedInReady);
+    console.log('=== LINKEDIN DEBUG === IN object:', typeof window.IN);
+    console.log('=== LINKEDIN DEBUG === IN.User:', typeof window.IN?.User);
     
-    if (!linkedInReady || typeof IN === 'undefined') {
-        showMessage('LinkedIn is still loading. Please wait...', 'info');
-        // Retry initialization
-        setTimeout(initLinkedIn, 1000);
+    if (!linkedInReady || typeof window.IN === 'undefined') {
+        showDebugMessage('LinkedIn not ready. Status: ' + (typeof window.IN), 'error');
         return;
     }
     
-    if (typeof IN.User === 'undefined') {
-        showMessage('LinkedIn service unavailable. Please refresh the page.', 'error');
+    if (typeof window.IN.User === 'undefined') {
+        showDebugMessage('IN.User not available', 'error');
         return;
     }
     
-    console.log('Starting LinkedIn authorization...');
+    console.log('=== LINKEDIN DEBUG === Calling IN.User.authorize');
     
-    // Use LinkedIn SDK to authorize
-    IN.User.authorize(function() {
-        console.log('Authorization successful');
+    window.IN.User.authorize(function() {
+        console.log('=== LINKEDIN DEBUG === Authorization successful');
         fetchProfileData();
     }, function(error) {
-        console.error('Authorization failed:', error);
-        showMessage('Failed to connect with LinkedIn. Please try again.', 'error');
+        console.error('=== LINKEDIN DEBUG === Authorization failed:', error);
+        showDebugMessage('Authorization failed: ' + (error?.message || 'Unknown error'), 'error');
     });
 }
 
-// Fetch profile data from LinkedIn
 function fetchProfileData() {
-    console.log('Fetching profile data...');
+    console.log('=== LINKEDIN DEBUG === Fetching profile data');
     
-    if (typeof IN === 'undefined') {
-        showMessage('LinkedIn service error. Please refresh.', 'error');
-        return;
-    }
-    
-    IN.API.Raw("/people/~:(firstName,lastName,headline,summary,location,profilePicture(displayImage~:playableStreams))?format=json")
+    window.IN.API.Raw("/people/~:(firstName,lastName,headline)?format=json")
         .result(function(data) {
-            console.log('Profile data received:', data);
+            console.log('=== LINKEDIN DEBUG === Profile data received:', data);
             updateProfileUI(data);
-            showMessage('LinkedIn data imported successfully!', 'success');
+            showDebugMessage('Success! Data loaded from LinkedIn', 'success');
         })
         .error(function(error) {
-            console.error('Error fetching profile:', error);
-            showMessage('Failed to load profile data. Please try again.', 'error');
+            console.error('=== LINKEDIN DEBUG === API Error:', error);
+            showDebugMessage('API Error: ' + (error?.message || 'Unknown'), 'error');
         });
 }
 
-// Update the UI with LinkedIn data
 function updateProfileUI(data) {
     try {
-        // Update Name
         if (data.firstName && data.lastName) {
             document.getElementById('profile-name').textContent = 
                 `${data.firstName.localized.en_US} ${data.lastName.localized.en_US}`;
         }
-        
-        // Update Headline
         if (data.headline) {
             document.getElementById('profile-headline').textContent = data.headline.localized.en_US;
         }
         
-        // Update Location
-        if (data.location) {
-            document.getElementById('profile-location').textContent = data.location.name;
-        }
-        
-        // Update Summary
-        if (data.summary) {
-            document.getElementById('profile-summary').textContent = data.summary.localized.en_US;
-        }
-        
-        // Update Profile Picture
-        const pictureElement = document.getElementById('profile-picture');
-        if (data.profilePicture && data.profilePicture['displayImage~'].elements.length > 0) {
-            const pictureUrl = data.profilePicture['displayImage~'].elements[0].identifiers[0].identifier;
-            pictureElement.src = pictureUrl;
-        }
-        
-        // Update button to show success
         const button = document.getElementById('linkedin-button');
         button.textContent = '✓ LinkedIn Connected';
         button.disabled = true;
@@ -148,44 +119,39 @@ function updateProfileUI(data) {
         button.classList.add('btn-success');
         
     } catch (error) {
-        console.error('Error updating UI:', error);
-        showMessage('Error displaying profile data', 'error');
+        console.error('=== LINKEDIN DEBUG === UI Update error:', error);
     }
 }
 
-// Show user messages
-function showMessage(message, type = 'info') {
-    // Remove existing messages
-    const existing = document.getElementById('user-message');
+function showDebugMessage(message, type = 'info') {
+    console.log('=== LINKEDIN DEBUG === Message:', message);
+    
+    const existing = document.getElementById('debug-message');
     if (existing) existing.remove();
     
-    // Create new message
     const messageDiv = document.createElement('div');
-    messageDiv.id = 'user-message';
+    messageDiv.id = 'debug-message';
     messageDiv.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'}`;
     messageDiv.textContent = message;
-    messageDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000;';
+    messageDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; background: white; border: 2px solid red;';
     
     document.body.appendChild(messageDiv);
     
-    // Auto-remove after 5 seconds
     setTimeout(() => {
-        if (messageDiv.parentNode) {
-            messageDiv.remove();
-        }
-    }, 5000);
+        if (messageDiv.parentNode) messageDiv.remove();
+    }, 10000);
 }
 
-// Initialize when page loads
+// Multiple initialization attempts
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing LinkedIn...');
+    console.log('=== LINKEDIN DEBUG === DOM loaded');
     initLinkedIn();
 });
 
-// Also initialize on window load as backup
 window.addEventListener('load', function() {
-    console.log('Window loaded, checking LinkedIn...');
-    if (!linkedInReady) {
-        setTimeout(initLinkedIn, 500);
-    }
+    console.log('=== LINKEDIN DEBUG === Window loaded');
+    setTimeout(initLinkedIn, 1000);
 });
+
+// Also try initializing after a longer delay
+setTimeout(initLinkedIn, 3000);
