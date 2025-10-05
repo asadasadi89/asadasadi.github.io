@@ -44,8 +44,9 @@
             <h1 id="profile-name">Your Name</h1>
             <p id="profile-headline" class="lead">Professional Headline</p>
             <p id="profile-location" class="text-muted mb-3">Location</p>
-            <button onclick="signInWithLinkedIn()" class="btn linkedin-blue">
-                <i class="bi bi-linkedin"></i> Import from LinkedIn
+            <!-- 🎯 UPDATED BUTTON - CHANGES MADE HERE 🎯 -->
+            <button id="linkedin-button" onclick="importFromLinkedIn()" class="btn linkedin-blue" disabled>
+                <i class="bi bi-linkedin"></i> Loading LinkedIn...
             </button>
         </div>
     </section>
