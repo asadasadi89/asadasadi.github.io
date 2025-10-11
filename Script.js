@@ -1,133 +1,109 @@
-// LinkedIn Integration - Fixed for your URL
-console.log('=== LINKEDIN DEBUG === Script loaded for asadasadi89.github.io');
+// Simple LinkedIn Integration
+console.log('LinkedIn integration started');
 
-let linkedinReady = false;
+// Wait for page to fully load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing LinkedIn');
+    initializeLinkedIn();
+});
 
-function initLinkedIn() {
-    console.log('=== LINKEDIN DEBUG === Initializing LinkedIn SDK');
-    console.log('=== LINKEDIN DEBUG === Current URL:', window.location.href);
+function initializeLinkedIn() {
+    console.log('Loading LinkedIn SDK...');
     
-    // Check if already loaded
-    if (window.IN) {
-        console.log('=== LINKEDIN DEBUG === SDK already loaded');
-        linkedinReady = true;
-        enableButton();
-        return;
-    }
-
+    // Create and configure the LinkedIn script
     const script = document.createElement('script');
-    script.type = 'text/javascript';
     script.src = 'https://platform.linkedin.com/in.js';
-    
-    // 🎯 Your Client ID
-    script.text = `api_key: 789fpgwdxweuiv
-authorize: true
-scope: r_liteprofile`;
+    script.text = 'api_key: 789fpgwdxweuiv\nauthorize: true\nscope: r_liteprofile';
     
     script.onload = function() {
-        console.log('=== LINKEDIN DEBUG === LinkedIn script loaded successfully');
-        
-        // Wait for IN object with timeout
-        let attempts = 0;
-        const checkInterval = setInterval(function() {
-            attempts++;
-            
-            if (window.IN) {
-                clearInterval(checkInterval);
-                console.log('=== LINKEDIN DEBUG === IN object available!');
-                console.log('=== LINKEDIN DEBUG === IN.User:', typeof IN.User);
-                linkedinReady = true;
-                enableButton();
-            } else if (attempts > 30) { // 3 second timeout
-                clearInterval(checkInterval);
-                console.error('=== LINKEDIN DEBUG === IN object never loaded');
-                showErrorMessage('LinkedIn SDK loaded but IN object not available');
-            }
-        }, 100);
+        console.log('LinkedIn SDK loaded successfully');
+        waitForINObject();
     };
     
-    script.onerror = function(error) {
-        console.error('=== LINKEDIN DEBUG === Failed to load LinkedIn SDK:', error);
-        showErrorMessage('Failed to load LinkedIn SDK. Check Client ID and Redirect URL.');
+    script.onerror = function() {
+        console.error('Failed to load LinkedIn SDK');
+        updateButton('Error loading LinkedIn', true);
     };
     
+    // Add to page
     document.head.appendChild(script);
-    console.log('=== LINKEDIN DEBUG === LinkedIn script added to page');
 }
 
-function enableButton() {
-    const button = document.getElementById('linkedin-button');
-    if (button) {
-        button.disabled = false;
-        button.innerHTML = 'Import from LinkedIn';
-        console.log('=== LINKEDIN DEBUG === Button enabled and ready!');
-    } else {
-        console.error('=== LINKEDIN DEBUG === Could not find linkedin-button');
-    }
-}
-
-function showErrorMessage(message) {
-    const button = document.getElementById('linkedin-button');
-    if (button) {
-        button.innerHTML = 'Error - Check Console';
-        button.style.backgroundColor = '#dc3545';
-    }
-    console.error('=== LINKEDIN DEBUG ===', message);
-}
-
-function importFromLinkedIn() {
-    console.log('=== LINKEDIN DEBUG === Import button clicked!');
-    console.log('=== LINKEDIN DEBUG === LinkedIn ready:', linkedinReady);
-    console.log('=== LINKEDIN DEBUG === IN object:', typeof window.IN);
+function waitForINObject() {
+    console.log('Waiting for IN object...');
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds
     
-    if (!linkedinReady || typeof window.IN === 'undefined') {
-        alert('LinkedIn is not ready yet. Please wait a moment and try again.');
+    const checkInterval = setInterval(function() {
+        attempts++;
+        
+        if (window.IN) {
+            clearInterval(checkInterval);
+            console.log('IN object is available');
+            setupLinkedInButton();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.error('IN object never became available');
+            updateButton('LinkedIN not available', true);
+        }
+    }, 100);
+}
+
+function setupLinkedInButton() {
+    const button = document.getElementById('linkedin-button');
+    if (!button) {
+        console.error('LinkedIn button not found');
         return;
     }
     
-    if (typeof window.IN.User === 'undefined') {
-        alert('LinkedIn service not available. Please refresh the page.');
+    // Enable the button
+    button.disabled = false;
+    button.textContent = 'Import from LinkedIn';
+    
+    // Add click event listener
+    button.addEventListener('click', handleLinkedInClick);
+    
+    console.log('LinkedIn button is ready');
+}
+
+function handleLinkedInClick() {
+    console.log('LinkedIn button clicked');
+    
+    if (!window.IN || !window.IN.User) {
+        alert('LinkedIn is not ready. Please try again.');
         return;
     }
     
-    console.log('=== LINKEDIN DEBUG === Starting LinkedIn authorization...');
-    
-    try {
-        window.IN.User.authorize(function() {
-            console.log('=== LINKEDIN DEBUG === Authorization successful!');
-            fetchProfileData();
-        }, function(error) {
-            console.error('=== LINKEDIN DEBUG === Authorization failed:', error);
-            alert('LinkedIn authorization failed. Please try again.');
-        });
-    } catch (error) {
-        console.error('=== LINKEDIN DEBUG === Error:', error);
-        alert('Error: ' + error.message);
-    }
+    // Start LinkedIn authorization
+    IN.User.authorize(function() {
+        console.log('LinkedIn authorization successful');
+        fetchLinkedInProfile();
+    }, function(error) {
+        console.error('LinkedIn authorization failed:', error);
+        alert('Authorization failed. Please try again.');
+    });
 }
 
-function fetchProfileData() {
-    console.log('=== LINKEDIN DEBUG === Fetching profile data...');
+function fetchLinkedInProfile() {
+    console.log('Fetching LinkedIn profile...');
     
-    window.IN.API.Raw("/people/~:(firstName,lastName,headline,summary,location)?format=json")
+    IN.API.Raw("/people/~:(firstName,lastName,headline)?format=json")
         .result(function(data) {
-            console.log('=== LINKEDIN DEBUG === Profile data received:', data);
-            updateProfileUI(data);
+            console.log('Profile data received:', data);
+            updateProfileWithData(data);
         })
         .error(function(error) {
-            console.error('=== LINKEDIN DEBUG === API Error:', error);
-            alert('Failed to load profile data from LinkedIn.');
+            console.error('Error fetching profile:', error);
+            alert('Failed to load profile data.');
         });
 }
 
-function updateProfileUI(data) {
+function updateProfileWithData(data) {
     try {
-        console.log('=== LINKEDIN DEBUG === Updating UI with profile data');
-        
         // Update name
         if (data.firstName && data.lastName) {
-            document.getElementById('profile-name').textContent = 
-                data.firstName.localized.en_US + ' ' + data.lastName.localized.en_US;
+            const fullName = data.firstName.localized.en_US + ' ' + data.lastName.localized.en_US;
+            document.getElementById('profile-name').textContent = fullName;
         }
         
         // Update headline
@@ -135,39 +111,26 @@ function updateProfileUI(data) {
             document.getElementById('profile-headline').textContent = data.headline.localized.en_US;
         }
         
-        // Update location
-        if (data.location) {
-            document.getElementById('profile-location').textContent = data.location.name;
-        }
+        // Update button to show success
+        updateButton('LinkedIn Connected', false);
         
-        // Update summary
-        if (data.summary) {
-            document.getElementById('profile-summary').textContent = data.summary.localized.en_US;
-        }
-        
-        // Update button
-        const button = document.getElementById('linkedin-button');
-        button.innerHTML = '✓ LinkedIn Connected';
-        button.disabled = true;
-        button.style.backgroundColor = '#28a745';
-        
-        console.log('=== LINKEDIN DEBUG === UI updated successfully!');
+        console.log('Profile updated successfully');
         
     } catch (error) {
-        console.error('=== LINKEDIN DEBUG === Error updating UI:', error);
+        console.error('Error updating profile:', error);
     }
 }
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== LINKEDIN DEBUG === DOM loaded, starting LinkedIn initialization');
-    initLinkedIn();
-});
-
-// Backup initialization after 2 seconds
-setTimeout(function() {
-    if (!linkedinReady) {
-        console.log('=== LINKEDIN DEBUG === Backup initialization');
-        initLinkedIn();
+function updateButton(text, isError) {
+    const button = document.getElementById('linkedin-button');
+    if (button) {
+        button.textContent = text;
+        button.disabled = true;
+        
+        if (isError) {
+            button.style.backgroundColor = '#dc3545';
+        } else {
+            button.style.backgroundColor = '#28a745';
+        }
     }
-}, 2000);
+}
